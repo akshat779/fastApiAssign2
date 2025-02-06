@@ -1,0 +1,304 @@
+Routes Overview
+
+- Users Routes
+    - Register:
+        - Allows new users to sign up.
+        - POST /users/register
+
+    - Update (Only an existing user can update his account):
+        - Allows an authenticated user to update their account details (like email, password, etc.).
+        - PUT /users/{user_id}/update
+
+    - Delete (Only an existing user can delete their account):
+        - Allows an authenticated user to delete their own account.
+        - DELETE /users/{user_id}/delete
+
+    - View All Users:
+        - Allows admins to view all users.
+        - GET /users/all
+
+    - View One User:
+        - Allows admins to view a specific user's details.
+        - GET /users/{user_id}
+
+    - View Their Favorite Products List (Need to be authenticated as user):
+        - Allows authenticated users to view a list of products they’ve marked as favorites.
+        - GET /users/{user_id}/favorites
+
+- Admins Routes
+    - Register (Only a previous Admin can make other admins):
+        - Only existing platform admins can register new admins.
+        - POST /admins/register
+
+    - Update (Only an existing admin can update his details):
+        - Allows an existing admin to update their details.
+        - PUT /admins/{admin_id}/update
+
+    - Delete (Only an existing admin can delete their account):
+        - An admin can delete their own account (but not others).
+        - DELETE /admins/{admin_id}/delete
+
+    - View All Admins:
+        - Allows platform admins to view the list of all admins.
+        - GET /admins/all
+
+    - Add Product (Admin-Only):
+        - Allows an admin to add a new product to their domain.
+        - POST /admins/{admin_id}/products/add
+
+    - Update Product (Admin-Only):
+        - Allows an admin to update product details (like price, description, quantity).
+        - PUT /admins/{admin_id}/products/{product_id}/update
+
+    - Delete Product (Admin-Only):
+        - Allows an admin to delete a product from their domain.
+        - DELETE /admins/{admin_id}/products/{product_id}/delete
+
+    - View All Products (Admin-Only):
+        - Allows an admin to view all products in their domain.
+        - GET /admins/{admin_id}/products/
+
+    - Search Product (Admin-Only):
+        - Allows an admin to search for a product by name.
+        - GET /admins/{admin_id}/products/search?q={query}
+
+    - View Product (Admin-Only):
+        - Allows an admin to view a specific product’s details.
+        - GET /admins/{admin_id}/products/{product_id}
+
+- Additional Routes for Products and Orders
+    - Product Category Filters (Admin-Only):
+        - Filters products by category.
+        - GET /admins/{admin_id}/products/category/{category_name}
+
+    - Create Order (User-Only):
+        - A user can create an order with one or more items (each containing product and quantity).
+        - POST /users/{user_id}/orders/create
+
+    - View Order History (User-Only):
+        - Users can view their past orders (order history).
+        - GET /users/{user_id}/orders/history
+
+    - Add Item to Order (User-Only):
+        - A user can add an item to an existing order (ensuring the quantity is less than or equal to the available quantity).
+        - POST /users/{user_id}/orders/{order_id}/items/add
+
+Additional Considerations:
+
+- Admin-Only Features:
+    - Order Management: Admins may need to have access to view and manage orders across users. Example:
+        - GET /admins/{admin_id}/orders/
+        - GET /admins/{admin_id}/orders/{order_id}
+
+- Favorites Management (Bonus):
+    - Add/Remove Product from Favorites:
+        - Users can mark/unmark products as favorites.
+        - POST /users/{user_id}/favorites/add/{product_id}
+        - DELETE /users/{user_id}/favorites/remove/{product_id}
+
+Example Flow:
+
+- Register User:
+    - The user fills out a registration form and is saved into the database.
+        - POST /users/register
+
+- Admin Creates New Admin:
+    - An existing admin creates a new admin.
+        - POST /admins/register
+
+- Product Management:
+    - Admin logs into their domain to add/update/remove products. They can view the available products for their brand.
+        - POST /admins/{admin_id}/products/add
+        - PUT /admins/{admin_id}/products/{product_id}/update
+
+- User Places an Order:
+    - A user selects products, checks available quantity, and creates an order.
+        - POST /users/{user_id}/orders/create
+        - POST /users/{user_id}/orders/{order_id}/items/add
+
+- View Favorites:
+    - A user wants to see all their favorite products.
+        - GET /users/{user_id}/favorites
+
+*****************************************************TABLES********************************************************************************
+1. Users Table (users)
+
+This table will store user information and their roles (User and Admin).
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        username: Unique string for user identification.
+        email: Unique string for email.
+        password_hash: The hashed password for authentication.
+        role: Enum/relationship to the roles table (can be user, admin).
+        created_at: Timestamp for user creation.
+        updated_at: Timestamp for last update.
+
+2. Admins Table (admins)
+
+This table is for platform admins. In your case, admins are just users with an admin role, so you could directly use the users table and filter based on the role. However, to manage any specific admin properties, we can have a separate table.
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        user_id: Foreign key to the users table (1:1 relation to users).
+        created_at: Timestamp for admin creation (can be inherited from users).
+        updated_at: Timestamp for last admin update.
+
+3. Roles Table (roles)
+
+This table will store different roles in the application (like user and admin).
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        role_name: String (e.g., user, admin).
+
+    Note: You could also use an enum in the users table to define roles, but this approach is useful if you plan to have more complex roles in the future.
+
+4. Products Table (products)
+
+This table will store information about each product available on the platform.
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        admin_id: Foreign key to the admins table (indicates which admin manages the product).
+        name: Name of the product.
+        description: Text description of the product.
+        price: Numeric value representing the price of the product.
+        category: Category name (e.g., Electronics, Apparel, etc.).
+        quantity: Available stock for the product.
+        created_at: Timestamp for product creation.
+        updated_at: Timestamp for last product update.
+
+5. Orders Table (orders)
+
+This table will track each order a user creates, including a reference to the user and the total amount.
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        user_id: Foreign key to the users table (who created the order).
+        total_quantity: Total number of items in the order.
+        total_amount: The total price for all items in the order.
+        status: Enum or string to represent order status (e.g., pending, completed, canceled).
+        created_at: Timestamp for order creation.
+        updated_at: Timestamp for last order update.
+
+6. Order Items Table (order_items)
+
+This table will store the individual items that are part of each order.
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        order_id: Foreign key to the orders table.
+        product_id: Foreign key to the products table.
+        quantity: Quantity of the product in the order.
+        unit_price: Price of the product at the time of order.
+        total_price: quantity * unit_price (total price for this item).
+
+7. Favorites Table (favorites)
+
+This table will store the relationship between users and their favorite products.
+
+    Columns:
+        id: Primary key, auto-increment integer.
+        user_id: Foreign key to the users table.
+        product_id: Foreign key to the products table.
+        created_at: Timestamp for when the product was added to the favorites.
+        updated_at: Timestamp for the last update of the favorite.
+
+    Note: Users can mark/unmark products as favorites, so this table will have unique constraints on user_id and product_id to ensure each user can only mark a product once as a favorite.
+
+Table Relationships Overview:
+
+    Users & Admins:
+        A user can be an admin if they have the admin role. An admin is just a user with an elevated role.
+        One-to-One: users.id → admins.user_id
+
+    Users & Orders:
+        A user can create multiple orders.
+        One-to-Many: users.id → orders.user_id
+
+    Orders & Order Items:
+        An order can have multiple order items (products).
+        One-to-Many: orders.id → order_items.order_id
+        Many-to-One: products.id → order_items.product_id
+
+    Admins & Products:
+        An admin manages multiple products.
+        One-to-Many: admins.id → products.admin_id
+
+    Users & Favorites:
+        A user can mark multiple products as favorites, and a product can be favorited by many users.
+        Many-to-Many: users.id → favorites.user_id and products.id → favorites.product_id
+
+SQL Example for Tables:
+
+Here’s an example of how you might define these tables in SQL (or through an ORM like SQLAlchemy in Python):
+
+-- Users Table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role_id INT REFERENCES roles(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Roles Table
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL
+);
+
+-- Admins Table
+CREATE TABLE admins (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Products Table
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    admin_id INT REFERENCES admins(id),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(255),
+    quantity INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Orders Table
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    total_quantity INT,
+    total_amount DECIMAL(10, 2),
+    status VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Order Items Table
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id),
+    product_id INT REFERENCES products(id),
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL
+);
+
+-- Favorites Table
+CREATE TABLE favorites (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    product_id INT REFERENCES products(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_favorite UNIQUE (user_id, product_id)
+);
