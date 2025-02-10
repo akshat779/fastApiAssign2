@@ -1,2 +1,6 @@
-fast-api
 uvicorn
+fastapi
+sqlalchemy
+passlib
+python-jose
+python-multipart
