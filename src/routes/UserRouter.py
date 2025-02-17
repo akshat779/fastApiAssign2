@@ -45,14 +45,24 @@ def delete(id: int, db: Session = Depends(get_db), current_user: models.User = D
 def create_order_item(request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return User.create_order_item(current_user.id, request, db)
 
-@router.get("/order-items/{id}", response_model=schemas.OrderItem)
-def get_order_item(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.get_order_item(current_user.id, id, db)
+# @router.get("/order-items", response_model=List[schemas.OrderItem])
+# def get_order_items(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+#     print(current_user.id)
+#     return User.get_order_item(current_user.id, db)
+# @router.get("/order-items/{id}", response_model=schemas.OrderItem)
+# def get_order_item(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+#     return User.get_order_items(current_user.id, db)
 
 @router.put("/order-items/{id}", response_model=schemas.OrderItem)
 def update_order_item(id: int, request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return User.update_order_item(current_user.id, id, request, db)
 
-@router.delete("/order-items/{id}", response_model=str)
-def delete_order_item(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.delete_order_item(current_user.id, id, db)
+# @router.get("/order-items/{id}", response_model=schemas.OrderItem)
+# def get_order_item(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+#     return User.get_order_item(current_user.id, id, db)
+@router.get("/orders/{order_id}/order-items", response_model=List[schemas.OrderItem])
+def get_order_items_by_order_id(order_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return User.get_order_items_by_order_id(current_user.id, order_id, db)
+# @router.get("/{user_id}/order-items", response_model=List[schemas.OrderItem])
+# def get_order_items_by_user_id(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+#     return User.get_order_items_by_user_id(user_id, db)

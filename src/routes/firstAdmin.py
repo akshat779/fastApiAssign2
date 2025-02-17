@@ -13,7 +13,7 @@ def create_first_admin(db: Session = Depends(get_db)):
     new_user = models.User(
         username="admin",
         email="admin@example.com",
-        password_hash=hashed_password,
+        password=hashed_password,
         role=models.RoleEnum.admin
     )
     db.add(new_user)

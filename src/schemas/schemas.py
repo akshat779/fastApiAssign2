@@ -49,14 +49,16 @@ class Product(ProductBase):
 class OrderItemBase(BaseModel):
     product_id: int
     quantity: int
-    unit_price: int
-    total_price: int
+    unit_price: float
+    total_price: float
 
-class OrderItemCreate(OrderItemBase):
-    pass
+class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
 
 class OrderItem(OrderItemBase):
     id: int
+    user_id: int  # Add user_id
     order_id: int
 
     class Config:

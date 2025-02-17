@@ -114,3 +114,4 @@ def get_products_by_admin(admin_id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No products found for this admin")
     return products
 
+

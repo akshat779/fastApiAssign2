@@ -20,6 +20,7 @@ class User(Base):
     orders = relationship('Order', back_populates='user')
     favorites = relationship('Favorite', back_populates='user')
     admin = relationship('Admin', uselist=False, back_populates='user')
+    order_items = relationship('OrderItem', back_populates='user')  # Add relationship
 
 class Admin(Base):
     __tablename__ = 'admins'
@@ -57,12 +58,14 @@ class Order(Base):
 class OrderItem(Base):
     __tablename__ = 'order_items'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))  # Add user_id
     order_id = Column(Integer, ForeignKey('orders.id', ondelete='CASCADE'))
     product_id = Column(Integer, ForeignKey('products.id', ondelete='CASCADE'))
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(10, 2), nullable=False)
     total_price = Column(DECIMAL(10, 2), nullable=False)
 
+    user = relationship('User', back_populates='order_items')  # Relationship with User
     order = relationship('Order', back_populates='order_items')
     product = relationship('Product', back_populates='order_items')
 

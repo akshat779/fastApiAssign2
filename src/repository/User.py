@@ -62,6 +62,36 @@ def delete(id:int, db:Session = Depends(get_db)):
     db.commit()
     return "Deleted"
 
+
+
+# def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Session):
+#     product = db.query(models.Product).filter(models.Product.id == request.product_id).first()
+#     if not product:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+#     if product.quantity < request.quantity:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient product quantity")
+
+#     # Calculate prices
+#     unit_price = product.price
+#     total_price = unit_price * request.quantity
+
+#     # Update product quantity
+#     product.quantity -= request.quantity
+
+#     new_order_item = models.OrderItem(
+#         user_id=user_id,  # Add user_id
+#         order_id=None,  # This should be set to the actual order ID when creating an order
+#         product_id=request.product_id,
+#         quantity=request.quantity,
+#         unit_price=unit_price,
+#         total_price=total_price
+#     )
+
+#     db.add(new_order_item)
+#     db.commit()
+#     db.refresh(new_order_item)
+#     return new_order_item
+
 def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Session):
     product = db.query(models.Product).filter(models.Product.id == request.product_id).first()
     if not product:
@@ -69,26 +99,63 @@ def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Sessio
     if product.quantity < request.quantity:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient product quantity")
 
+    # Calculate prices
+    unit_price = product.price
+    total_price = unit_price * request.quantity
+
     # Update product quantity
     product.quantity -= request.quantity
 
+    # Create a new order if necessary
+    order = db.query(models.Order).filter(models.Order.user_id == user_id, models.Order.status == 'pending').first()
+    if not order:
+        order = models.Order(user_id=user_id, total_quantity=0, total_amount=0, status='pending')
+        db.add(order)
+        db.commit()
+        db.refresh(order)
+
     new_order_item = models.OrderItem(
-        user_id=user_id,  # Associate order item with the current user
+        user_id=user_id,
+        order_id= order.id,  # Set the order_id
         product_id=request.product_id,
         quantity=request.quantity,
-        unit_price=request.unit_price,
-        total_price=request.total_price
+        unit_price=unit_price,
+        total_price=total_price
     )
+
+    # Update order totals
+    order.total_quantity += request.quantity
+    order.total_amount += total_price
+
     db.add(new_order_item)
     db.commit()
     db.refresh(new_order_item)
     return new_order_item
 
-def get_order_item(user_id: int, id: int, db: Session):
-    order_item = db.query(models.OrderItem).filter(models.OrderItem.id == id, models.OrderItem.user_id == user_id).first()
-    if not order_item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order item not found")
-    return order_item
+# def get_order_item(user_id: int, order_item_id: int, db: Session):
+#     order_item = db.query(models.OrderItem).filter(models.OrderItem.id == order_item_id, models.OrderItem.user_id == user_id).first()
+#     if not order_item:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order item not found")
+#     return order_item
+
+# def get_order_item(user_id: int, db: Session):
+#     order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).all()
+#     print(order_items)
+#     if not order_items:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this user")
+#     return order_items
+
+def get_order_items_by_order_id(user_id: int, order_id: int, db: Session):
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id, models.OrderItem.order_id == order_id).all()
+    if not order_items:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this order")
+    return order_items
+
+def get_order_items_by_user_id(user_id: int, db: Session):
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).all()
+    if not order_items:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this user")
+    return order_items
 
 def update_order_item(user_id: int, id: int, request: schemas.OrderItemCreate, db: Session):
     order_item = db.query(models.OrderItem).filter(models.OrderItem.id == id, models.OrderItem.user_id == user_id).first()
