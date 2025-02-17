@@ -66,3 +66,11 @@ def get_order_items_by_order_id(order_id: int, db: Session = Depends(get_db), cu
 # @router.get("/{user_id}/order-items", response_model=List[schemas.OrderItem])
 # def get_order_items_by_user_id(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
 #     return User.get_order_items_by_user_id(user_id, db)
+
+@router.post("/orders/", response_model=schemas.Order)
+def create_order(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return User.create_order(current_user.id, db)
+
+@router.get("/{user_id}/all-orders", response_model=List[schemas.Order])
+def get_all_orders(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+    return User.get_all_orders(user_id, db)

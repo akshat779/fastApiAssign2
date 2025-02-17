@@ -75,7 +75,7 @@ class OrderCreate(OrderBase):
 class Order(OrderBase):
     id: int
     user_id: int
-    order_items: List[OrderItem] = []
+   
 
     class Config:
         orm_mode = True

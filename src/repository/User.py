@@ -181,3 +181,43 @@ def delete_order_item(user_id: int, id: int, db: Session):
     db.delete(order_item)
     db.commit()
     return "Order item deleted"
+
+def create_order(user_id: int, db: Session):
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).all()
+    if not order_items:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No order items to place an order")
+
+    total_quantity = sum(item.quantity for item in order_items)
+    total_amount = sum(item.total_price for item in order_items)
+
+    order = models.Order(
+        user_id=user_id,
+        total_quantity=total_quantity,
+        total_amount=total_amount,
+        status="placed"
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    # Assign order_id to order items and update order items
+    for item in order_items:
+        item.order_id = order.id
+        db.add(item)
+    db.commit()
+
+    # Query the order again to include the order items in the response
+    order_with_items = db.query(models.Order).filter(models.Order.id == order.id).first()
+
+    # Clear order items
+    for item in order_items:
+        db.delete(item)
+    db.commit()
+
+    return order_with_items
+
+def get_all_orders(user_id: int, db: Session):
+    orders = db.query(models.Order).filter(models.Order.user_id == user_id).all()
+    if not orders:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No orders found for this user")
+    return orders
