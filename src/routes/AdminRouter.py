@@ -81,6 +81,12 @@ async def create_admin(admin_request: schemas.UserCreate,db: Session = Depends(g
     
     return Admin.create_admin(admin_request, db)
 
+@router.get("/orders", response_model=List[schemas.Order], dependencies=[Depends(keycloak.has_role("admin"))])
+def get_all_orders(db: Session = Depends(get_db), current_admin: models.User = Depends(keycloak.get_current_user)):
+    admin_id = db.query(models.User).filter(models.User.username == current_admin.username).first().id
+    print(admin_id)
+    return Admin.get_all_orders(admin_id,db)
+
 @router.get("/{id}", response_model=schemas.Admin, dependencies=[Depends(keycloak.has_role("admin"))])
 def show_admin(id: int, db: Session = Depends(get_db)):
     return Admin.show_admin(id, db)

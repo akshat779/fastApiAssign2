@@ -118,3 +118,19 @@ def get_products_by_admin(admin_id:int, db: Session):
     return products
 
 
+def get_all_orders(id:int, db: Session = Depends(get_db)):
+    # orders = db.query(models.Order).filter(models.Order.user_id == id).all()
+    # return orders
+    products = get_products_by_admin(id, db)
+    product_ids = [product.id for product in products]
+    
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.product_id.in_(product_ids)).all()
+    if not order_items:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this admin's products")
+    
+    orders = db.query(models.Order).filter(models.Order.id.in_([item.order_id for item in order_items])).all()
+    
+    return {
+        "orders": orders,
+        "order_items": order_items
+    }

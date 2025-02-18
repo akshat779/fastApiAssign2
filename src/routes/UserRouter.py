@@ -84,14 +84,17 @@ def update(id: int, request: schemas.UserCreate, db: Session = Depends(get_db), 
     return User.update(id, request, db)
 
 # ,dependencies=[Depends(keycloak.has_role("user"))]
-
-@router.get("/favorites", response_model=List[schemas.Product])
+# , response_model=List[schemas.Product]
+@router.get("/favorites")
 #  current_user: models.User = Depends(is_self_or_admin)
 def get_favorite_products(db: Session = Depends(get_db),current_user = Depends(keycloak.get_current_user)):
     user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
-    print(current_user)
-    print(user_id)
     return User.get_favorite_products(user_id, db)
+
+@router.post("/favorites", response_model=schemas.Product)
+def add_favorite_product(request: schemas.FavoriteCreate, db: Session = Depends(get_db), current_user = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.add_favorite_product(user_id, request, db)
 
 @router.get("/{user_id}/orders", response_model=List[schemas.Order])
 def get_user_orders(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
@@ -102,8 +105,9 @@ def delete(id: int, db: Session = Depends(get_db), current_user: models.User = D
     return User.delete(id, db)
 
 @router.post("/order-items/", response_model=schemas.OrderItem)
-def create_order_item(request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.create_order_item(current_user.id, request, db)
+def create_order_item(request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.create_order_item(user_id, request, db)
 
 # @router.get("/order-items", response_model=List[schemas.OrderItem])
 # def get_order_items(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -114,23 +118,23 @@ def create_order_item(request: schemas.OrderItemCreate, db: Session = Depends(ge
 #     return User.get_order_items(current_user.id, db)
 
 @router.put("/order-items/{id}", response_model=schemas.OrderItem)
-def update_order_item(id: int, request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.update_order_item(current_user.id, id, request, db)
+def update_order_item(id: int, request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.update_order_item(user_id, id, request, db)
 
-# @router.get("/order-items/{id}", response_model=schemas.OrderItem)
-# def get_order_item(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-#     return User.get_order_item(current_user.id, id, db)
-@router.get("/orders/{order_id}/order-items", response_model=List[schemas.OrderItem])
-def get_order_items_by_order_id(order_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.get_order_items_by_order_id(current_user.id, order_id, db)
-# @router.get("/{user_id}/order-items", response_model=List[schemas.OrderItem])
-# def get_order_items_by_user_id(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
-#     return User.get_order_items_by_user_id(user_id, db)
 
-@router.post("/orders/", response_model=schemas.Order)
-def create_order(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return User.create_order(current_user.id, db)
+@router.get("/orders/order-items", response_model=List[schemas.OrderItem])
+def get_order_items_by_order_id(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.get_order_items_by_order_id(user_id, db)
 
-@router.get("/{user_id}/all-orders", response_model=List[schemas.Order])
-def get_all_orders(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+
+@router.post("/placeorders", response_model=schemas.Order)
+def create_order(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.create_order(user_id, db)
+
+@router.get("/all-orders", response_model=List[schemas.Order])
+def get_all_orders(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
     return User.get_all_orders(user_id, db)

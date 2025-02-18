@@ -43,7 +43,8 @@ def get_favorite_products(user_id: int, db: Session):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {user_id} not found")
     
-    return user.favorites
+    favorite_products = [favorite.product.name for favorite in user.favorites]
+    return favorite_products
 
 def get_user_orders(user_id: int, db: Session):
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -145,8 +146,23 @@ def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Sessio
 #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this user")
 #     return order_items
 
-def get_order_items_by_order_id(user_id: int, order_id: int, db: Session):
-    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id, models.OrderItem.order_id == order_id).all()
+def add_favorite_product(user_id: int, request: schemas.FavoriteCreate, db: Session):
+    product = db.query(models.Product).filter(models.Product.id == request.product_id).first()
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    favorite = db.query(models.Favorite).filter(models.Favorite.user_id == user_id, models.Favorite.product_id == request.product_id).first()
+    if favorite:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product already added to favorites")
+
+    new_favorite = models.Favorite(user_id=user_id, product_id=request.product_id)
+    db.add(new_favorite)
+    db.commit()
+    db.refresh(new_favorite)
+    return product
+
+def get_order_items_by_order_id(user_id: int, db: Session):
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).all()
     if not order_items:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this order")
     return order_items
