@@ -23,7 +23,9 @@ def create_admin(request: schemas.UserCreate, db: Session = Depends(get_db)):
         username=request.username,
         email=request.email,
         password=hashed_password,
-        role=request.role
+        role=request.role,
+        firstname = request.firstname,
+        lastname = request.lastname
     )
     db.add(new_user)
     db.commit()
@@ -34,7 +36,8 @@ def create_admin(request: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_admin)
 
-    return new_admin
+    finalUser = db.query(models.User).filter(models.User.id == new_user.id).first()
+    return finalUser
 
 def show_admin(id: int, db: Session = Depends(get_db)):
     admin = db.query(models.Admin).filter(models.Admin.id == id).first()
@@ -108,7 +111,7 @@ def delete_product(id: int, db: Session):
     db.commit()
     return "Product deleted"
 
-def get_products_by_admin(admin_id: int, db: Session):
+def get_products_by_admin(admin_id:int, db: Session):
     products = db.query(models.Product).filter(models.Product.admin_id == admin_id).all()
     if not products:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No products found for this admin")

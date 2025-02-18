@@ -52,7 +52,29 @@ async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get
             headers={"Authorization": f"Bearer {token}"},
         )
         response.raise_for_status()
-    
+        
+        user_id = response.headers["Location"].split("/")[-1]
+        
+        # Fetch the user role ID
+        response = await client.get(
+            f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/roles",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+        roles = response.json()
+        user_role = next((role for role in roles if role["name"] == "user"), None)
+        if not user_role:
+            raise HTTPException(status_code=404, detail="User role not found")
+        user_role_id = user_role["id"]
+        
+        # Assign the "user" role to the user
+        response = await client.post(
+            f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/users/{user_id}/role-mappings/realm",
+            json=[{"id": user_role_id, "name": "user"}],
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+
     return User.create(user_request, db)
     # return {"message": "User created successfully"}
 
@@ -61,8 +83,14 @@ async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get
 def update(id: int, request: schemas.UserCreate, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
     return User.update(id, request, db)
 
-@router.get("/{user_id}/favorites", response_model=List[schemas.Product])
-def get_favorite_products(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+# ,dependencies=[Depends(keycloak.has_role("user"))]
+
+@router.get("/favorites", response_model=List[schemas.Product])
+#  current_user: models.User = Depends(is_self_or_admin)
+def get_favorite_products(db: Session = Depends(get_db),current_user = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    print(current_user)
+    print(user_id)
     return User.get_favorite_products(user_id, db)
 
 @router.get("/{user_id}/orders", response_model=List[schemas.Order])

@@ -302,3 +302,5 @@ CREATE TABLE favorites (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_favorite UNIQUE (user_id, product_id)
 );
+
+admin create karne par sirf ye aata hai response me 

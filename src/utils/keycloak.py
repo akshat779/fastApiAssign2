@@ -14,7 +14,7 @@ REALM_NAME = "fastapi-backend"
 KEYCLOAK_CLIENT_ID = "fastapi-backend"
 # _________________________
 KEYCLOAK_ADMIN_USERNAME = "admin"
-KEYCLOAK_ADMIN_PASSWORD = "root"
+KEYCLOAK_ADMIN_PASSWORD = "admin"
 KEYCLOAK_ADMIN_CLIENT_ID = "admin-cli"
 # JWKs URL
 JWKS_URL = f"{KEYCLOAK_URL}/realms/{REALM_NAME}/protocol/openid-connect/certs"
@@ -26,7 +26,7 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     auto_error=False
 )
 
-async def validate_token(token: str) -> schemas.TokenData:
+async def validate_token(token: str) -> schemas.KeycloakToken:
     try:
         # Fetch JWKS
         async with httpx.AsyncClient() as client:
@@ -62,7 +62,7 @@ async def validate_token(token: str) -> schemas.TokenData:
         if not username or not roles:
             raise HTTPException(status_code=401, detail="Token missing required claims")
         
-        return schemas.TokenData(username=username, roles=roles)
+        return schemas.KeycloakToken(username=username, roles=roles)
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     except Exception as e:
@@ -75,7 +75,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return await validate_token(token)
 
 def has_role(required_role:str):
-    def role_checker(token: schemas.TokenData = Depends(get_current_user)) -> schemas.TokenData:
+    def role_checker(token: schemas.KeycloakToken = Depends(get_current_user)) -> schemas.KeycloakToken:
         if required_role not in token.roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return token
