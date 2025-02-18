@@ -7,6 +7,8 @@ from typing import List
 from ..utils.dependencies import is_self_or_admin
 from ..models import models
 from ..utils.oauth import get_current_user
+from ..utils import keycloak
+import httpx
 
 router = APIRouter(
     prefix="/user",
@@ -17,13 +19,43 @@ router = APIRouter(
 def getAll(db: Session = Depends(get_db)):
     return User.getAll(db)
 
-@router.post("/", response_model=schemas.User)
-def create(request: schemas.UserCreate, db: Session = Depends(get_db)):
-    return User.create(request, db)
+# @router.post("/create", response_model=schemas.User)
+# def create(request: schemas.UserCreate, db: Session = Depends(get_db)):
+#     return User.create(request, db)
 
-@router.get("/{id}", response_model=schemas.User)
-def show(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
-    return User.show(id, db)
+@router.post("/create")
+async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get_db)):
+    token = await keycloak.get_keycloak_admin_token()
+    
+    async with httpx.AsyncClient() as client:
+        # Check if user already exists
+        response = await client.get(
+            f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/users",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"username": user_request.username}
+        )
+        response.raise_for_status()
+        if response.json():
+            raise HTTPException(status_code=409, detail="User already exists")
+
+        # Create user in Keycloak
+        response = await client.post(
+            f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/users",
+            json={
+                "username": user_request.username,
+                "enabled": True,
+                "email": user_request.email,
+                "firstName": user_request.firstname,
+                "lastName": user_request.lastname,
+                "credentials": [{"type": "password", "value": user_request.password, "temporary": False}],
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
+    
+    return User.create(user_request, db)
+    # return {"message": "User created successfully"}
+
 
 @router.put("/{id}", response_model=str)
 def update(id: int, request: schemas.UserCreate, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):

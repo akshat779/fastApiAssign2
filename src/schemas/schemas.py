@@ -9,6 +9,8 @@ class RoleEnum(str, Enum):
 class UserBase(BaseModel):
     username: str
     email: EmailStr
+    firstname: str
+    lastname: str
     role: RoleEnum
 
 class UserCreate(UserBase):
@@ -99,3 +101,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+
+class KeycloakToken(BaseModel):
+    username: str
+    roles: List[str]

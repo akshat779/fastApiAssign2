@@ -15,6 +15,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
+    firstname = Column(String, nullable=False)
+    lastname = Column(String, nullable=False)
     password = Column(Text, nullable=False)
     role = Column(Enum(RoleEnum), nullable=False)
     orders = relationship('Order', back_populates='user')

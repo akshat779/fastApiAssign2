@@ -14,7 +14,7 @@ def getAll(db:Session = Depends(get_db)):
 
 def create(request: schemas.UserCreate, db:Session = Depends(get_db)):
     hashed_password = hash_password(request.password)
-    new_user = models.User(username=request.username,role = request.role, email=request.email, password=hashed_password)
+    new_user = models.User(username=request.username,role = request.role, email=request.email, password=hashed_password, firstname=request.firstname, lastname=request.lastname)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
