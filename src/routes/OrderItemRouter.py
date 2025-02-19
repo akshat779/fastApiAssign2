@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["products"]
 )
 
-# Existing order item routes...
+
 
 @router.get("/products/", response_model=List[schemas.Product])
 def get_all_products(db: Session = Depends(get_db)):

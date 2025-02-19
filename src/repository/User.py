@@ -100,14 +100,14 @@ def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Sessio
     if product.quantity < request.quantity:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient product quantity")
 
-    # Calculate prices
+    
     unit_price = product.price
     total_price = unit_price * request.quantity
 
-    # Update product quantity
+   
     product.quantity -= request.quantity
 
-    # Create a new order if necessary
+  
     order = db.query(models.Order).filter(models.Order.user_id == user_id, models.Order.status == 'pending').first()
     if not order:
         order = models.Order(user_id=user_id, total_quantity=0, total_amount=0, status='pending')
@@ -117,14 +117,14 @@ def create_order_item(user_id: int, request: schemas.OrderItemCreate, db: Sessio
 
     new_order_item = models.OrderItem(
         user_id=user_id,
-        order_id= order.id,  # Set the order_id
+        order_id= order.id,  
         product_id=request.product_id,
         quantity=request.quantity,
         unit_price=unit_price,
         total_price=total_price
     )
 
-    # Update order totals
+   
     order.total_quantity += request.quantity
     order.total_amount += total_price
 

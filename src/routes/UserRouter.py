@@ -6,7 +6,6 @@ from ..schemas import schemas
 from typing import List
 from ..utils.dependencies import is_self_or_admin
 from ..models import models
-from ..utils.oauth import get_current_user
 from ..utils import keycloak
 import httpx
 
@@ -38,7 +37,7 @@ async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get
         if response.json():
             raise HTTPException(status_code=409, detail="User already exists")
 
-        # Create user in Keycloak
+        # Creating user in Keycloak
         response = await client.post(
             f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/users",
             json={
@@ -55,7 +54,7 @@ async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get
         
         user_id = response.headers["Location"].split("/")[-1]
         
-        # Fetch the user role ID
+    #    user id milegi
         response = await client.get(
             f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/roles",
             headers={"Authorization": f"Bearer {token}"},
@@ -67,7 +66,7 @@ async def create_user(user_request: schemas.UserCreate,db: Session = Depends(get
             raise HTTPException(status_code=404, detail="User role not found")
         user_role_id = user_role["id"]
         
-        # Assign the "user" role to the user
+        # assigning the role
         response = await client.post(
             f"{keycloak.KEYCLOAK_URL}/admin/realms/{keycloak.REALM_NAME}/users/{user_id}/role-mappings/realm",
             json=[{"id": user_role_id, "name": "user"}],
