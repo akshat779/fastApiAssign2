@@ -1,5 +1,5 @@
 from ..repository import User
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Query
 from sqlalchemy.orm import Session
 from ..utils.database import get_db
 from ..schemas import schemas
@@ -15,8 +15,8 @@ router = APIRouter(
 )
 
 @router.get("/", response_model=List[schemas.User])
-def getAll(db: Session = Depends(get_db)):
-    return User.getAll(db)
+def getAll(db: Session = Depends(get_db),limit:int = Query(10),offset:int = Query(0)):  
+    return User.getAll(limit,offset,db)
 
 # @router.post("/create", response_model=schemas.User)
 # def create(request: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -95,13 +95,15 @@ def add_favorite_product(request: schemas.FavoriteCreate, db: Session = Depends(
     user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
     return User.add_favorite_product(user_id, request, db)
 
-@router.get("/{user_id}/orders", response_model=List[schemas.Order])
-def get_user_orders(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+@router.get("/orders", response_model=List[schemas.Order])
+def get_user_orders( db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
     return User.get_user_orders(user_id, db)
 
-@router.delete("/{id}", response_model=str)
-def delete(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
-    return User.delete(id, db)
+@router.delete("/delete", response_model=str)
+def delete( db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return User.delete(user_id, db)
 
 @router.post("/order-items/", response_model=schemas.OrderItem)
 def create_order_item(request: schemas.OrderItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
@@ -123,9 +125,9 @@ def update_order_item(id: int, request: schemas.OrderItemCreate, db: Session = D
 
 
 @router.get("/orders/order-items", response_model=List[schemas.OrderItem])
-def get_order_items_by_order_id(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+def get_order_items_by_order_id(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user),limit:int = Query(10),offset:int =  Query(0)):
     user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
-    return User.get_order_items_by_order_id(user_id, db)
+    return User.get_order_items_by_user_id(user_id, db,limit,offset)
 
 
 @router.post("/placeorders", response_model=schemas.Order)
@@ -134,6 +136,6 @@ def create_order(db: Session = Depends(get_db), current_user: models.User = Depe
     return User.create_order(user_id, db)
 
 @router.get("/all-orders", response_model=List[schemas.Order])
-def get_all_orders(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+def get_all_orders(db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user),limit:int = Query(10),offset:int =  Query(0)):
     user_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
-    return User.get_all_orders(user_id, db)
+    return User.get_all_orders(user_id, db,limit,offset)

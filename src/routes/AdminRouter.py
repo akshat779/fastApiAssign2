@@ -86,13 +86,15 @@ async def create_admin(admin_request: schemas.UserCreate,db: Session = Depends(g
 def show_admin(id: int, db: Session = Depends(get_db)):
     return Admin.show_admin(id, db)
 
-@router.put("/{id}", response_model=str, dependencies=[Depends(keycloak.has_role("admin"))])
-def update_admin(id: int, request: schemas.User, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
+@router.put("/", response_model=str, dependencies=[Depends(keycloak.has_role("admin"))])
+def update_admin( request: schemas.User, db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    id = db.query(models.User).filter(models.User.username == current_user.username).first().id
     return Admin.update_admin(id, request, db)
 
-@router.delete("/{id}", response_model=str, dependencies=[Depends(keycloak.has_role("admin"))])
-def delete_admin(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(is_self_or_admin)):
-    return Admin.delete_admin(id, db)
+@router.delete("/delete", response_model=str, dependencies=[Depends(keycloak.has_role("admin"))])
+def delete_admin( db: Session = Depends(get_db), current_user: models.User = Depends(keycloak.get_current_user)):
+    admin_id = db.query(models.User).filter(models.User.username == current_user.username).first().id
+    return Admin.delete_admin(admin_id, db)
 
 @router.post("/products/", response_model=schemas.Product, dependencies=[Depends(keycloak.has_role("admin"))])
 def create_product(request: schemas.ProductCreate, db: Session = Depends(get_db), current_admin: models.User = Depends(keycloak.get_current_user)):

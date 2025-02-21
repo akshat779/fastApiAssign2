@@ -12,7 +12,6 @@ from ..schemas import schemas
 KEYCLOAK_URL = "http://localhost:8080"
 REALM_NAME = "fastapi-backend"
 KEYCLOAK_CLIENT_ID = "fastapi-backend"
-# _________________________
 KEYCLOAK_ADMIN_USERNAME = "admin"
 KEYCLOAK_ADMIN_PASSWORD = "admin"
 KEYCLOAK_ADMIN_CLIENT_ID = "admin-cli"
@@ -28,35 +27,35 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
 
 async def validate_token(token: str) -> schemas.KeycloakToken:
     try:
-        # Fetch JWKS
+       
         async with httpx.AsyncClient() as client:
             response = await client.get(JWKS_URL)
             response.raise_for_status()
             jwks = response.json()
         
-        # Decode the token headers to get the key ID
+        
         headers = jwt.get_unverified_headers(token)
         kid = headers.get("kid")
         if not kid:
             raise HTTPException(status_code=401, detail="Token missing 'kid' header")
         
-        # Find the correct key in the JWKS
+      
         key_data = next((key for key in jwks["keys"] if key["kid"] == kid), None)
         if not key_data:
             raise HTTPException(status_code=401, detail="Matching key not found in JWKS")
         
-        # Convert JWK to RSA public key
+      
         public_key = jwk.construct(key_data).public_key()
         
-        # Verify the token
+     
         payload = jwt.decode(
             token, 
             key=public_key, 
             algorithms=["RS256"], 
-            audience="account"  # Ensure this matches the 'aud' claim in your token
+            audience="account"  
         )
         
-        # Extract username and roles
+      
         username = payload.get("preferred_username")
         roles = payload.get("realm_access", {}).get("roles", [])
         if not username or not roles:

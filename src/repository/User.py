@@ -8,8 +8,8 @@ from ..utils.hashing import hash_password
 
 
 
-def getAll(db:Session = Depends(get_db)):
-    users = db.query(models.User).all()
+def getAll(limit:int,offset:int,db:Session = Depends(get_db)):
+    users = db.query(models.User).offset(offset).limit(limit).all()
     return users
 
 def create(request: schemas.UserCreate, db:Session = Depends(get_db)):
@@ -167,8 +167,8 @@ def get_order_items_by_order_id(user_id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this order")
     return order_items
 
-def get_order_items_by_user_id(user_id: int, db: Session):
-    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).all()
+def get_order_items_by_user_id(user_id: int, db: Session,limit:int,offset:int):
+    order_items = db.query(models.OrderItem).filter(models.OrderItem.user_id == user_id).offset(offset).limit(limit).all()
     if not order_items:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No order items found for this user")
     return order_items
@@ -232,8 +232,8 @@ def create_order(user_id: int, db: Session):
 
     return order_with_items
 
-def get_all_orders(user_id: int, db: Session):
-    orders = db.query(models.Order).filter(models.Order.user_id == user_id).all()
+def get_all_orders(user_id: int, db: Session,limit:int,offset:int):
+    orders = db.query(models.Order).filter(models.Order.user_id == user_id).offset(offset).limit(limit).all()
     if not orders:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No orders found for this user")
     return orders
